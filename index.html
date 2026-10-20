@@ -174,19 +174,24 @@ document.addEventListener('keydown',function(e){
 });
 document.getElementById('back').addEventListener('click',function(){menu(grp(mode))});
 
+var lastTy={};
+function pickTy(key,n){var t;do{t=Math.max(rnd(0,n-1),rnd(0,n-1))}while(n>1&&t===lastTy[key]);lastTy[key]=t;return t;}
+var lastOp='';
 function makeOps(){
   var ops=['+','−'];
   if(level>=2)ops.push('×');
-  if(level>=3)ops.push('÷');
-  var op=ops[rnd(0,ops.length-1)],a,b,r,m=10+level*10;
-  if(op==='+'){a=rnd(1,m);b=rnd(1,m);r=a+b}
-  else if(op==='−'){a=rnd(2,m);b=rnd(1,a);r=a-b}
-  else if(op==='×'){var k=Math.min(3+level,15);a=rnd(2,k);b=rnd(2,k);r=a*b}
-  else{var d=Math.min(2+level,12),q=Math.min(3+level,15);b=rnd(2,d);r=rnd(2,q);a=b*r}
+  if(level>=4)ops.push('÷');
+  var op;do{op=ops[rnd(0,ops.length-1)]}while(ops.length>1&&op===lastOp);
+  lastOp=op;
+  var a,b,r,m=8+level*6,k=Math.min(2+level,12);
+  if(op==='+'){a=rnd(2,m);b=rnd(2,m);r=a+b}
+  else if(op==='−'){a=rnd(3,m);b=rnd(1,a-1);r=a-b}
+  else if(op==='×'){a=rnd(2,k);b=rnd(2,k);r=a*b}
+  else{b=rnd(2,k);r=rnd(2,k);a=b*r}
   return {t:a+' '+op+' '+b,r:r,s:'',time:mode==='hardA'?10000:undefined};
 }
 function makeEq1(){
-  var n=Math.min(level,5),ty=rnd(0,n-1),x=rnd(1,4+level*2),a=rnd(2,3+level),b=rnd(1,5+level*3),t;
+  var n=Math.min(level,5),ty=pickTy('eq1',n),x=rnd(1,4+level*2),a=rnd(2,3+level),b=rnd(1,5+level*3),t;
   if(ty===0)t='x + '+b+' = '+(x+b);
   else if(ty===1)t=a+'x = '+(a*x);
   else if(ty===2)t=a+'x + '+b+' = '+(a*x+b);
@@ -207,7 +212,7 @@ function L(a,b,c,d){return '<line class="dl" x1="'+a+'" y1="'+b+'" x2="'+c+'" y2
 function T(x,y,s,a,c){return '<text class="tx '+(c||'')+'" x="'+x+'" y="'+y+'" text-anchor="'+(a||'middle')+'">'+s+'</text>'}
 var TRI='30,110 190,110 30,25',RM='<polyline class="rm" points="30,98 42,98 42,110"/>';
 function makeArea(){
-  var ty=rnd(0,Math.min(level,5)-1),k=4+level*3,b=rnd(2,k),h=rnd(2,k),r,f,s;
+  var ty=pickTy('area',Math.min(level,5)),k=4+level*3,b=rnd(2,k),h=rnd(2,k),r,f,s;
   if(ty===0){if(b*h%2)h++;r=b*h/2;s='Triângulo';
     f=S(P('30,110 190,110 120,20')+L(120,20,120,110)+T(110,128,'b = '+b)+T(126,70,'h = '+h,'start'))}
   else if(ty===1){r=b*h;s='Retângulo';
@@ -221,7 +226,7 @@ function makeArea(){
   return {t:'Área = ?',r:r,s:s,f:f};
 }
 function makeTri(){
-  var ty=rnd(0,Math.min(level,5)-1),r,f,s,a,x,t;
+  var ty=pickTy('tri',Math.min(level,5)),r,f,s,a,x,t;
   if(ty===0){a=rnd(30,80);var b=rnd(30,80);r=180-a-b;s='Soma dos ângulos';
     f=S(P('30,110 190,110 110,20')+T(58,102,a+'°')+T(162,102,b+'°')+T(110,56,'?','middle','q'))}
   else if(ty===1){
@@ -238,7 +243,7 @@ function makeTri(){
 }
 function gcd(a,b){return b?gcd(b,a%b):a}
 function makePct(){
-  var ty=rnd(0,Math.min(level,7)-1),L=level,p,st,b,q,s,r;
+  var ty=pickTy('pct',Math.min(level,7)),L=level,p,st,b,q,s,r;
   function pick(a){p=a[rnd(0,a.length-1)];st=100/gcd(p,100)}
   var BIG=[10,20,25,40,50,60,75,80,5,15,30,35,45];
   if(ty===0){pick([10,50]);b=st*rnd(1,5+L*2);r=b*p/100;q=p+'% de '+b;s='Quanto é?'}
