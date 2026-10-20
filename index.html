@@ -326,6 +326,11 @@ function miss(timeout){
 }
 function getNick(){try{return localStorage.getItem('dm-nick')||''}catch(e){return ''}}
 function setNick(v){try{localStorage.setItem('dm-nick',v)}catch(e){}}
+var BADWORDS=['merda','bosta','caralho','cacete','porra','puta','puto','putinha','putona','buceta','boceta','cu','cuzao','cuzinho','arrombado','arrombada','corno','corna','desgraca','desgracado','piranha','vagabundo','vagabunda','otario','otaria','babaca','escroto','escrota','xota','xoxota','punheta','siririca','viado','veado','bicha','sapatao','traveco','viadagem','fdp','pqp','vtnc','vsf','pnc','tnc','foder','fodase','fodido','foda','retardado','retardada','pentelho','canalha','safado','safada','prostituta','boquete','penis','vagina','nazista','racista','estupro','estuprador'];
+function normWord(s){return String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[\s._*-]/g,'').replace(/(.)\1+/g,'$1');}
+var BADSET={};BADWORDS.forEach(function(w){BADSET[normWord(w)]=1});
+function mask(t){return '*'.repeat(t.replace(/[\s._*-]/g,'').length||1);}
+function censor(s){s=String(s||'');if(BADSET[normWord(s)])return mask(s);return s.replace(/\p{L}+/gu,function(tok){return BADSET[normWord(tok)]?mask(tok):tok;});}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return '&#'+c.charCodeAt(0)+';'})}
 function sbFetch(path,opts){
   opts=opts||{};
@@ -334,7 +339,7 @@ function sbFetch(path,opts){
 }
 function sendScore(m,pts,h){
   if(!SB_OK||!getNick().trim()||pts<=0)return Promise.resolve(null);
-  return sbFetch('scores',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({nick:getNick().trim().slice(0,20),mode:m,points:pts,hits:h})}).then(function(r){return r.ok}).catch(function(){return false});
+  return sbFetch('scores',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({nick:censor(getNick().trim().slice(0,20)),mode:m,points:pts,hits:h})}).then(function(r){return r.ok}).catch(function(){return false});
 }
 function getTotal(){try{return +localStorage.getItem('dm-total')||0}catch(e){return 0}}
 function bank(){playing=false;if(score>0){try{localStorage.setItem('dm-total',getTotal()+score)}catch(e){}}score=0}
@@ -347,8 +352,8 @@ function statsHtml(){
 function rkHtml(list){
   var top=list.slice(0,10),me=getNick().trim().toLowerCase(),med=['🥇','🥈','🥉'],h='';
   var order=[1,0,2].filter(function(i){return top[i]});
-  h+='<div class="pod">'+order.map(function(i){var x=top[i];return '<div class="pc p'+(i+1)+(String(x.nick).toLowerCase()===me?' me':'')+'"><div class="md">'+med[i]+'</div><div class="pn">'+esc(x.nick)+'</div><div class="pp">'+x.total+' pts</div><div class="ps">'+x.sub+'</div></div>'}).join('')+'</div>';
-  top.slice(3).forEach(function(x,j){h+='<div class="rr'+(String(x.nick).toLowerCase()===me?' me':'')+'"><b>'+(j+4)+'º</b><span class="rn">'+esc(x.nick)+'</span><span>'+x.total+' pts · '+x.sub+'</span></div>'});
+  h+='<div class="pod">'+order.map(function(i){var x=top[i];return '<div class="pc p'+(i+1)+(String(x.nick).toLowerCase()===me?' me':'')+'"><div class="md">'+med[i]+'</div><div class="pn">'+esc(censor(x.nick))+'</div><div class="pp">'+x.total+' pts</div><div class="ps">'+x.sub+'</div></div>'}).join('')+'</div>';
+  top.slice(3).forEach(function(x,j){h+='<div class="rr'+(String(x.nick).toLowerCase()===me?' me':'')+'"><b>'+(j+4)+'º</b><span class="rn">'+esc(censor(x.nick))+'</span><span>'+x.total+' pts · '+x.sub+'</span></div>'});
   return h;
 }
 function rankMenu(m){
@@ -417,7 +422,7 @@ function menu(sub){
   var gb=document.getElementById('gback');if(gb)gb.onclick=function(){menu()};
   var sb=document.getElementById('bars');if(sb)sb.onclick=function(){document.getElementById('stp').classList.toggle('open')};
   var go=function(){rankMenu('main')};var rk=document.getElementById('rank');if(rk)rk.onclick=go;var rb=document.getElementById('rkbtn');if(rb)rb.onclick=go;
-  var ni=document.getElementById('nick');if(ni)ni.oninput=function(){ni.value=ni.value.replace(/[&<>"']/g,'');setNick(ni.value)};
+  var ni=document.getElementById('nick');if(ni)ni.oninput=function(){ni.value=censor(ni.value.replace(/[&<>"']/g,''));setNick(ni.value)};
   ov.classList.remove('hide');
 }
 function begin(m){
