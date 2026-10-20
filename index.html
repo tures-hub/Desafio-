@@ -306,13 +306,14 @@ function playOk(){
 }
 function check(){
   if(answers.indexOf(input)>=0){
-    playOk();
+    playOk();if(navigator.vibrate)navigator.vibrate(25);
     locked=true;cancelAnimationFrame(raf);
     var left=Math.max(0,TIME-(performance.now()-start));
     score+=10*level+Math.round(left/1000);
     hits++;aEl.className='ok';
     var up=hits%(grp(mode)==='hard'?3:5)===0;
     if(up){level++;msg.textContent='🎉 Nível '+level+'!'}
+    else msg.textContent='✓ Certo!';
     hud();
     setTimeout(next,up?900:450);
   }else miss(false);
@@ -320,6 +321,7 @@ function check(){
 function miss(timeout){
   wrong.push({t:cur.t,s:cur.s,f:cur.f,r:show,u:input,timeout:timeout});
   locked=true;cancelAnimationFrame(raf);
+  if(navigator.vibrate)navigator.vibrate([50,40,50]);
   lives--;hud();aEl.className='bad shake';
   msg.textContent=(timeout?'⏰ Tempo esgotado. ':'')+(show.indexOf(' e ')>0?'Raízes: ':'Resposta: ')+show;
   if(lives<=0)setTimeout(over,1400);else setTimeout(next,1400);
@@ -377,6 +379,9 @@ function rankMenu(m){
     var el=document.getElementById('rk');if(!el)return;
     if(!list.length){el.textContent='Ainda não há pontuações neste modo.';return}
     el.innerHTML=rkHtml(list);
+    var meN=getNick().trim().toLowerCase(),myi=-1;
+    for(var i=0;i<list.length;i++){if(String(list[i].nick).toLowerCase()===meN){myi=i;break}}
+    if(myi>=10){var mx=list[myi];el.innerHTML+='<div class="rr me" style="margin-top:10px"><b>'+(myi+1)+'º</b><span class="rn">'+esc(mx.nick)+'</span><span>'+mx.total+' pts · '+mx.sub+'</span></div>';}
   }).catch(function(){var el=document.getElementById('rk');if(el)el.textContent='⚠️ Não foi possível carregar o ranking.'});
 }
 function wrongHtml(){
@@ -407,7 +412,7 @@ function menu(sub){
   if(playing)bank();
   document.body.classList.toggle('hard',sub==='hard');
   locked=true;cancelAnimationFrame(raf);
-  var h=sub==='geo'?'<h1>Geometria</h1><p>Escolha o tipo de questão</p>':sub==='hard'?'<h1>Hard 💀</h1><p>Modos brutais: tudo misturado e cada vez mais difícil</p>':'<img class="logo" src="'+LOGO+'" alt="Desafio+"><p>Escolha um modo de jogo</p>'+(SB_OK?'<input id="nick" class="nick" maxlength="20" placeholder="Seu apelido para o ranking" value="'+getNick()+'">':'');
+  var h=sub==='geo'?'<h1>Geometria</h1><p>Escolha o tipo de questão</p>':sub==='hard'?'<h1>Hard 💀</h1><p>Modos brutais: tudo misturado e cada vez mais difícil</p>':'<img class="logo" src="'+LOGO+'" alt="Desafio+"><p>Escolha um modo de jogo</p>'+(SB_OK?'<input id="nick" class="nick" maxlength="20" placeholder="Seu apelido para o ranking" value="'+esc(getNick())+'">':'');
   Object.keys(MODES).forEach(function(k){
     if(grp(k)!==(sub||''))return;
     var m=MODES[k],b=getBest(k);
